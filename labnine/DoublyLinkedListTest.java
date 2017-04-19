@@ -13,7 +13,7 @@ public class DoublyLinkedListTest {
     @Test(expected = NoSuchElementException.class)
     public void testNoSuchthing(){
       DoublyLinkedList test = new DoublyLinkedList();
-      LinkedList testIt = test.iterator();
+      DoublyLinkedListIterator testIt = test.getIterator();
       testIt.getData();
     }
 

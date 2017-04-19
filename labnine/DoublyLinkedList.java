@@ -1,144 +1,230 @@
-
-
-/******************************************************************************
- *  Compilation:  javac DoublyLinkedList.java
- *  Execution:    java DoublyLinkedList
- *  Dependencies: StdOut.java
- *
- *  A list implemented with a doubly linked list. The elements are stored
- *  (and iterated over) in the same order that they are inserted.
- *
- *  % java DoublyLinkedList 10
- *  10 random integers between 0 and 99
- *  24 65 2 39 86 24 50 47 13 4
- *
- *  add 1 to each element via next() and set()
- *  25 66 3 40 87 25 51 48 14 5
- *
- *  multiply each element by 3 via previous() and set()
- *  75 198 9 120 261 75 153 144 42 15
- *
- *  remove elements that are a multiple of 4 via next() and remove()
- *  75 198 9 261 75 153 42 15
- *
- *  remove elements that are even via previous() and remove()
- *  75 9 261 75 153 15
- *
- ******************************************************************************/
 package labnine;
+import java.util.List;
+import java.util.AbstractSequentialList;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 
-public class DoublyLinkedList<Item> implements Iterable<Item> {
-    private int n;        // number of elements on list
-    private Node pre;     // sentinel before first item
-    private Node post;    // sentinel after last item
 
-    public DoublyLinkedList() {
-        pre  = new Node();
-        post = new Node();
-        pre.next = post;
-        post.prev = pre;
+
+public class DoublyLinkedList extends AbstractSequentialList implements List{
+  private Node first;
+  private Node last;
+  public int size;
+  public DoublyLinkedListIterator iterator;
+  //private int modcount;
+
+  public DoublyLinkedList(){
+    first = null;
+    size = 0;
+    last = null;
+    iterator = new DoublyLinkedListIterator();
+  }
+
+  public DoublyLinkedListIterator getIterator(){
+    return iterator;
+  }
+
+  private boolean checkFirst(){
+    if (this.first == null){
+      return false;
+    }
+    return true;
+  }
+
+  private boolean checkLast(){
+    if(this.last == null){
+      return false;
+    }
+    return true;
+  }
+
+  public int size(){
+    return this.size;
+  }
+
+  ////////////////////////////////////////////////////////////////////////////////
+
+  private class Node{
+    // data container no methods
+    public Node next;
+    public Node previous;
+    public Object data;
+
+    public Node(Object data){
+      this.data = data;
     }
 
-    // linked list node helper data type
-    private class Node {
-        private Item item;
-        private Node next;
-        private Node prev;
+    public void setPrev(Node prv){
+      this.previous = prv;
     }
 
-    public boolean isEmpty()    { return n == 0; }
-    public int size()           { return n;      }
-
-    // add the item to the list
-    public void add(Item item) {
-        Node last = post.prev;
-        Node x = new Node();
-        x.item = item;
-        x.next = post;
-        x.prev = last;
-        post.prev = x;
-        last.next = x;
-        n++;
+    public void setNext(Node nxt){
+      this.next = nxt;
     }
 
-    public ListIterator<Item> iterator()  { return new DoublyLinkedListIterator(); }
-
-    // assumes no calls to DoublyLinkedList.add() during iteration
-    private class DoublyLinkedListIterator implements ListIterator<Item> {
-        private Node current      = pre.next;  // the node that is returned by next()
-        private Node lastAccessed = null;      // the last node to be returned by prev() or next()
-                                               // reset to null upon intervening remove() or add()
-        private int index = 0;
-
-        public boolean hasNext()      { return index < n; }
-        public boolean hasPrevious()  { return index > 0; }
-        public int previousIndex()    { return index - 1; }
-        public int nextIndex()        { return index;     }
-
-        public Item next() {
-            if (!hasNext()) throw new NoSuchElementException();
-            lastAccessed = current;
-            Item item = current.item;
-            current = current.next;
-            index++;
-            return item;
-        }
-
-        public Item previous() {
-            if (!hasPrevious()) throw new NoSuchElementException();
-            current = current.prev;
-            index--;
-            lastAccessed = current;
-            return current.item;
-        }
-
-        // replace the item of the element that was last accessed by next() or previous()
-        // condition: no calls to remove() or add() after last call to next() or previous()
-        public void set(Item item) {
-            if (lastAccessed == null) throw new IllegalStateException();
-            lastAccessed.item = item;
-        }
-
-        // remove the element that was last accessed by next() or previous()
-        // condition: no calls to remove() or add() after last call to next() or previous()
-        public void remove() {
-            if (lastAccessed == null) throw new IllegalStateException();
-            Node x = lastAccessed.prev;
-            Node y = lastAccessed.next;
-            x.next = y;
-            y.prev = x;
-            n--;
-            if (current == lastAccessed)
-                current = y;
-            else
-                index--;
-            lastAccessed = null;
-        }
-
-        // add element to list
-        public void add(Item item) {
-            Node x = current.prev;
-            Node y = new Node();
-            Node z = current;
-            y.item = item;
-            x.next = y;
-            y.next = z;
-            z.prev = y;
-            y.prev = x;
-            n++;
-            index++;
-            lastAccessed = null;
-        }
-
+    public void setData(Object obj){
+      this.data = obj;
     }
 
-    public String toString() {
-        StringBuilder s = new StringBuilder();
-        for (Item item : this)
-            s.append(item + " ");
-        return s.toString();
+    public Node getPrev(){
+      return this.previous;
     }
 
+    public Node getNext(){
+      return this.next;
+    }
+
+    public Object getData(){
+      return this.data;
+    }
+  }
+
+  ////////////////////////////////////////////////////////////////////////////////
+
+
+  public ListIterator listIterator(int index){
+    DoublyLinkedListIterator list = new DoublyLinkedListIterator();
+    for (int i = 0; i<index; i++){
+      list.next();
+    }
+    return list;
+  }
+
+
+  // has to contain all ListIterator methods
+  public class DoublyLinkedListIterator implements ListIterator{
+    private Node nextIt;
+    private Node prevIt;
+    private int index;
+    private Node lastReturned;
+
+
+    public DoublyLinkedListIterator(){
+      nextIt = first;
+      prevIt = null;
+    }
+
+
+    public boolean hasNext(){
+      if(nextIt == null){
+        return false;
+      }
+      return true;
+    }
+
+    public boolean hasPrevious(){
+      if(prevIt == null){
+        return false;
+      }
+      return true;
+    }
+
+    public int previousIndex(){
+      return index - 1;
+    }
+
+    public int nextIndex(){
+      return index+1;
+    }
+
+    public int getIndex(){
+      return index;
+    }
+
+    public Object next(){
+      if (!this.hasNext()){
+        throw new NoSuchElementException();
+        //return null;
+      }
+      index++;
+      lastReturned = nextIt;
+      prevIt = nextIt;
+      nextIt = nextIt.getNext();
+      return lastReturned.getData();
+    }
+
+    public Object previous(){
+      if (!this.hasPrevious()){
+        throw new NoSuchElementException();
+      }
+      index--;
+      lastReturned = prevIt;
+      nextIt = prevIt;
+      prevIt = prevIt.getPrev();
+      return lastReturned.getData();
+    }
+
+    public void add(Object data){
+      Node newNode = new Node(data);
+      if(!checkFirst()){
+        first = newNode;
+        newNode.setPrev(null);
+        newNode.setNext(null);
+        index = 0;
+        nextIt = newNode;
+        prevIt = null;
+        size++;
+      }
+
+      else if(nextIt != null){
+        newNode.setPrev(prevIt);
+        newNode.setNext(nextIt);
+        index++;
+        nextIt.setPrev(newNode);
+        prevIt.setNext(newNode);
+        nextIt = newNode.getNext();
+        prevIt = newNode;
+        size++;
+      }
+
+      else{
+        newNode.setPrev(prevIt);
+        newNode.setNext(nextIt);
+        index++;
+        prevIt = newNode;
+        size++;
+      }
+    }
+
+    public void remove(){
+      if(lastReturned == null){
+        throw new NoSuchElementException();
+      }
+      // with a prev and a next
+      else if (lastReturned.getNext() != null && lastReturned.getPrev() != null){
+        lastReturned.getNext().setPrev(lastReturned.getPrev());
+        lastReturned.getPrev().setNext(lastReturned.getNext());
+        prevIt = lastReturned.getPrev();
+        nextIt = lastReturned.getNext();
+        size--;
+      }
+      //with a previous and no next
+      else if (lastReturned.getNext() == null && lastReturned.getPrev()!= null){
+        lastReturned.getPrev().setNext(null);
+        prevIt = lastReturned.getPrev();
+        nextIt = null;
+        size--;
+      }
+      //with a next but not a prev
+      else if(lastReturned.getNext()!=null && lastReturned.getPrev()==null){
+        lastReturned.getNext().setPrev(null);
+        first = lastReturned.getNext();
+        prevIt = null;
+        nextIt = lastReturned.getNext();
+        size--;
+      }
+      //niehter prev nor next
+      else if(lastReturned.getNext()==null && lastReturned.getPrev()==null){
+        first = null;
+        prevIt = null;
+        nextIt = null;
+        size--;
+      }
+    }
+
+    public void set(Object data){
+      lastReturned.setData(data);
+    }
+
+  }
 }
